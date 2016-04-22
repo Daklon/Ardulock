@@ -8,6 +8,18 @@
 //create a radio object
 RF24 radio(9,14);
 
+
+//pin list:
+//vcc 3.3v MUST!
+//gnd gnd
+//ce 9
+//cs 14 (A0)
+//sck 13
+//MOSI 11
+//MISO 12
+
+
+
 //Set the addres to this radio
 const byte rxAddr[6] = "00001";
 
@@ -23,15 +35,18 @@ const byte rxAddr[6] = "00001";
 void Radioconfig(RF24 radio){
   radio.begin();
   radio.setRetries(15, 15);
+  radio.setPALevel(RF24_PA_LOW);
+  radio.enableDynamicPayloads();
   radio.openWritingPipe(rxAddr);
+
   radio.stopListening();
+  
 }
 
 void setup() {
   // put your setup code here, to run once:
   Radioconfig(radio);
   
-
   //con input_pullup se invierten los valores, LOW es alto y HIGH es bajo, además al conectarlo a un OUTPUT, este debe estar en LOW
   pinMode(2,INPUT_PULLUP);
   pinMode(3,INPUT_PULLUP);
@@ -115,8 +130,15 @@ char leer(){
   }
 }
 
-void Enviar(RF24 radio, char text[]){
+void Enviar(){
+  
+  if (!radio.write( &pin, sizeof(char) * pinlong )){
+       Serial.println(F("failed"));
+  }else{
+       Serial.println(F("sended")); 
+  }
  
+  
 } 
 
 void restart(){
@@ -142,7 +164,7 @@ void flush(){
     index= 0;
 }
 void loop() {
-  char tecla;  
+ char tecla;  
   tecla = leer();
   if (tecla != 0 && tecla != '#' && tecla != '*'){
     if(index < pinlong){
@@ -150,15 +172,14 @@ void loop() {
       index++;
     }else if(index == pinlong){
       //funcion enviar
-      Serial.println("enviando pin:");
-      for (int i=0;i< pinlong;i++){
-        Serial.print(pin[i]);
-      }
+      Serial.println("enviando pin:\n");
+
+      Enviar();
       //funcion flush
       flush();
     }
   }else if(tecla == '#'){
-    //funcion enviar
+    Enviar();
     flush();
   }else if(tecla == '*'){
     flush();
